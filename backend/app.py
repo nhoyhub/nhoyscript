@@ -275,11 +275,10 @@ def manage_accounts(account_id=None):
                 "name": data['name'],
                 "image": data['image'],
                 "username": data['username'],
-                "password": data['password']
+                "password": data['password'],
+                # FIX: Ensure accentColor is always set, using default if not provided in the update
+                "accentColor": data.get('accentColor', '#0ea5e9') 
             }
-            
-            if 'accentColor' in data:
-                update_data['accentColor'] = data['accentColor']
             
             update_result = accounts_collection.update_one(
                 {"_id": ObjectId(account_id)},

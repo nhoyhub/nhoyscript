@@ -89,6 +89,7 @@
         }
     </script>
     <style>
+        /* ... (rest of the CSS is unchanged) ... */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
         * {
@@ -1084,7 +1085,7 @@
             }
         }
         
-        // NEW: uploadEditProfileImage handler for the edit profile modal
+        // FIX: uploadEditProfileImage handler for the edit profile modal
         async function uploadEditProfileImage(file) {
             const label = document.getElementById('editProfileUploadLabel');
             label.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Uploading...';
@@ -1105,6 +1106,7 @@
                 document.getElementById('editProfileImageUrlValue').value = data.imageUrl; // Store new URL
                 document.getElementById('editProfileCurrentImage').src = data.imageUrl; // Update preview
                 label.innerHTML = '<i class="fas fa-check-circle text-accent mr-2"></i>' + data.filename;
+                // FIX: Return the image URL on success
                 return data.imageUrl;
             } catch (error) {
                 label.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i>Upload Failed';
@@ -1242,7 +1244,6 @@
             
             document.getElementById('editProfileId').value = profile._id;
             document.getElementById('editProfileName').value = profile.name;
-            // Removed: document.getElementById('editProfileImage').value = profile.image; 
             document.getElementById('editProfileImageUrlValue').value = profile.image; // Set current image URL
             document.getElementById('editProfileCurrentImage').src = profile.image;
             document.getElementById('editProfileUsername').value = profile.username;
@@ -1284,6 +1285,7 @@
             }
         }
 
+        // FIX: handleEditProfile now correctly uses the image URL from the hidden field
         async function handleEditProfile(e) {
             e.preventDefault();
             
@@ -1473,7 +1475,7 @@
                 }
             });
             
-            // NEW: Edit Profile Image Upload Handler
+            // NEW: Edit Profile Image Upload Handler (uses the fixed function)
             document.getElementById('editProfileImageFile').addEventListener('change', async (e) => {
                 if (e.target.files.length > 0) {
                     const file = e.target.files[0];
@@ -1491,6 +1493,7 @@
                     }
                     
                     try {
+                        // This calls the fixed function which updates the hidden input field
                         await uploadEditProfileImage(file);
                     } catch (error) {
                         showMessage('editProfileMessage', 'Failed to upload image', 'error');
