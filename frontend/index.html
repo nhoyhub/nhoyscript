@@ -657,7 +657,9 @@
     </footer>
 
     <script>
-        const API_BASE = window.location.origin; // Dynamic API base
+        
+        const API_BASE = "https://nhoy-script.onrender.com";
+
 
         const banners = [
             "https://i.pinimg.com/736x/0e/be/63/0ebe63a7b480ea035e83ca3e5e419ad5.jpg",
@@ -722,7 +724,8 @@
                 const dot = document.createElement('span');
                 dot.className = 'dot';
                 dot.addEventListener('click', () => goToSlide(idx));
-                dotsContainer.appendChild(dot);
+                dotsContainer.appendChild(dot);const API_BASE = "https://nhoy-script.onrender.com";
+
             });
 
             function updateSlider() {

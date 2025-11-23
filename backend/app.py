@@ -25,12 +25,17 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this")
 frontend_path = pathlib.Path(__file__).parent.parent / 'frontend'
 app = Flask(__name__, static_folder=str(frontend_path))
 app.secret_key = SECRET_KEY
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 
 # Configure CORS properly
-CORS(app, supports_credentials=True, origins=['http://127.0.0.1:5000', 'http://localhost:5000'])
+CORS(app, supports_credentials=True, origins=[
+    "https://nhoyscript.vercel.app",      # frontend Vercel
+    "https://nhoy-script.onrender.com",   # frontend+backend Render (old)
+    "http://127.0.0.1:5000",
+    "http://localhost:5000"
+])
 
 # --- MongoDB Setup ---
 try:
