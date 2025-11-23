@@ -31,11 +31,12 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)
 
 # Configure CORS properly
 CORS(app, supports_credentials=True, origins=[
-    "https://nhoyscript.vercel.app",      # frontend Vercel
-    "https://nhoy-script.onrender.com",   # frontend+backend Render (old)
+    "https://nhoyscript.vercel.app",
+    "https://nhoyscript.onrender.com",   # ✅ ត្រឹមត្រូវ
     "http://127.0.0.1:5000",
     "http://localhost:5000"
 ])
+
 
 # --- MongoDB Setup ---
 try:
