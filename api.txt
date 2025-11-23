@@ -1,0 +1,3 @@
+Nhoy-script12345
+mongodb+srv://panhoy1111zin_db_user:nhoy-script1234@@nhoy-scrript.c0yh69a.mongodb.net/?appName=nhoy-scrript
+mongodb+srv://panhoy1111zin_db_user:Nhoy-script12345@nhoy-scrript.c0yh69a.mongodb.net/?appName=nhoy-scrript

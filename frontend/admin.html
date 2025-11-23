@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | nhoy Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <div class="modal" id="editProfileModal">
+        <div class="modal-content p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl sm:text-2xl font-bold text-white">Edit Profile</h3>
+                <button id="closeProfileModal" class="w-10 h-10 rounded-xl bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-gray-300 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="editProfileForm" class="space-y-4">
+                <input type="hidden" id="editProfileId">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Profile Name</label>
+                    <input type="text" id="editProfileName" required
+                           class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Current Image</label>
+                    <img id="editProfileCurrentImage" class="w-24 h-24 rounded-full object-cover mb-3 border-2 border-gray-700">
+                    
+                    <input type="file" id="editProfileImageFile" accept="image/*" class="hidden">
+                    <button type="button" onclick="document.getElementById('editProfileImageFile').click()"
+                            class="w-full px-4 py-4 border-2 border-dashed border-gray-700 rounded-xl hover:border-accent transition text-gray-300 font-medium bg-secondary hover:bg-primary">
+                        <i class="fas fa-cloud-upload-alt mr-2 text-accent"></i>
+                        <span id="editProfileUploadLabel">Choose New Image File</span>
+                    </button>
+                    <input type="hidden" id="editProfileImageUrlValue">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Username</label>
+                    <input type="text" id="editProfileUsername" required
+                           class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Password</label>
+                    <input type="text" id="editProfilePassword" required
+                           class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Accent Color</label>
+                    <div class="flex gap-3">
+                        <input type="color" id="editProfileColor" value="#0ea5e9"
+                               class="w-20 h-12 border-2 border-gray-700 bg-secondary rounded-xl cursor-pointer">
+                        <input type="text" id="editProfileColorText" value="#0ea5e9"
+                               class="flex-1 px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition font-mono">
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="submit" class="flex-1 bg-accent hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                    <button type="button" id="cancelProfileEdit" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-3 px-6 rounded-xl transition">
+                        Cancel
+                    </button>
+                </div>
+
+                <div id="editProfileMessage" class="hidden p-4 rounded-xl font-medium"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#0a0a0a',
+                        'primary-dark': '#000000',
+                        'secondary': '#1a1a1a',
+                        'accent': '#0ea5e9',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #333333 100%);
+            min-height: 100vh;
+            color: #ffffff;
+        }
+
+        /* Overlay for mobile */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 280px;
+            background: rgba(10, 10, 10, 0.98); 
+            backdrop-filter: blur(20px);
+            box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            color: white;
+        }
+
+        /* Mobile: Hide sidebar by default */
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            padding: 1.5rem;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (max-width: 1023px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (min-width: 640px) {
+            .main-content {
+                padding: 2rem;
+            }
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: rgba(26, 26, 26, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Stat Card Animation */
+        .stat-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Script Card */
+        .script-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            background: #1a1a1a;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .script-card:hover {
+            border-left-color: #0ea5e9;
+            background: #282828;
+            transform: translateX(4px);
+        }
+
+        /* Button Styles */
+        .btn-gradient {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #0ea5e9, #000000); 
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #38bdf8, #1a1a1a);
+        }
+
+        /* Input Focus */
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #0ea5e9; 
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 0%, #0ea5e9 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #222;
+            color: white;
+            border-radius: 28px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Responsive Table */
+        @media (max-width: 768px) {
+            .responsive-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .responsive-table table {
+                min-width: 600px;
+            }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 640px) {
+            .stat-card {
+                padding: 1.25rem !important;
+            }
+
+            .stat-card .text-4xl {
+                font-size: 2rem;
+            }
+
+            .stat-card .w-14 {
+                width: 3rem;
+                height: 3rem;
+            }
+        }
+
+        /* Profile Slider Mobile */
+        @media (max-width: 640px) {
+            .profile-slide {
+                padding: 0;
+            }
+            
+            .profile-slide > div {
+                padding: 1.5rem !important;
+            }
+        }
+
+        /* Sticky header on mobile */
+        .sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        @media (max-width: 1023px) {
+            .sticky-header {
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <aside class="sidebar custom-scrollbar" id="sidebar">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-10">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mr-3 shadow-lg">
+                        <img src="https://i.pinimg.com/736x/17/94/ea/1794ea7f66d326bd3224aac4a33b67e7.jpg" 
+                             alt="logo" class="w-10 h-10 rounded-xl">
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-white">nhoy Hub</h2>
+                        <p class="text-xs text-gray-400">Admin Control</p>
+                    </div>
+                </div>
+                <button class="lg:hidden text-gray-400 hover:text-white transition" id="closeSidebar">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <nav class="space-y-2 mb-10">
+                <a href="#dashboard" class="nav-link flex items-center px-4 py-3.5 rounded-2xl bg-gradient-to-r from-primary-dark to-accent text-white font-medium shadow-lg">
+                    <i class="fas fa-home w-6 text-lg"></i>
+                    <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="#scripts" class="nav-link flex items-center px-4 py-3.5 rounded-2xl text-gray-300 hover:bg-secondary transition font-medium">
+                    <i class="fas fa-code w-6 text-lg"></i>
+                    <span class="ml-3">Scripts</span>
+                </a>
+                <a href="#profiles" class="nav-link flex items-center px-4 py-3.5 rounded-2xl text-gray-300 hover:bg-secondary transition font-medium">
+                    <i class="fas fa-id-card w-6 text-lg"></i>
+                    <span class="ml-3">Profiles</span>
+                </a>
+                <a href="#accounts" class="nav-link flex items-center px-4 py-3.5 rounded-2xl text-gray-300 hover:bg-secondary transition font-medium">
+                    <i class="fas fa-users w-6 text-lg"></i>
+                    <span class="ml-3">Accounts</span>
+                </a>
+                <a href="#settings" class="nav-link flex items-center px-4 py-3.5 rounded-2xl text-gray-300 hover:bg-secondary transition font-medium">
+                    <i class="fas fa-cog w-6 text-lg"></i>
+                    <span class="ml-3">Settings</span>
+                </a>
+            </nav>
+
+
+
+            <div class="glass-card p-4">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase mb-3">Quick Stats</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-300">Scripts</span>
+                        <span class="font-bold text-white" id="sidebarScripts">0</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-300">Accounts</span>
+                        <span class="font-bold text-white" id="sidebarAccounts">0</span>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <div class="glass-card p-4 mb-6">
+                <div class="flex items-center mb-3">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center text-white font-bold text-lg mr-3">
+                        <img src="https://i.pinimg.com/736x/67/b3/09/67b309599a28ddd511b993b67e6cb4b5.jpg" alt="">
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold text-white truncate">Admin nhoy</p>
+                        <p class="text-xs text-gray-400 truncate">admin@nhoyhub.com</p>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="w-full flex items-center justify-center px-4 py-2.5 rounded-xl bg-red-800 text-white hover:bg-red-700 transition font-medium">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="mainContent">
+        <div class="glass-card p-4 sm:p-6 mb-4 sm:mb-6 sticky-header">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center flex-1 min-w-0">
+                    <button class="lg:hidden mr-3 sm:mr-4 w-10 h-10 rounded-xl bg-secondary shadow-md flex items-center justify-center text-gray-300 hover:text-accent transition flex-shrink-0" id="menuToggle">
+                        <i class="fas fa-bars text-lg"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text truncate">Welcome to Admin </h1>
+                        <p class="text-xs sm:text-sm text-gray-400 mt-1">Manage your hub with ease</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
+                    <button class="w-10 h-10 rounded-xl bg-secondary shadow-md flex items-center justify-center text-gray-300 hover:text-accent transition relative">
+                        <i class="fas fa-bell text-lg"></i>
+                        <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                    </button>
+                    <button class="hidden sm:flex w-10 h-10 rounded-xl bg-secondary shadow-md items-center justify-center text-gray-300 hover:text-accent transition">
+                        <i class="fas fa-search text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6" id="dashboard">
+            <div class="glass-card stat-card p-4 sm:p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-blue-900 flex items-center justify-center">
+                        <i class="fas fa-code text-xl sm:text-2xl text-accent"></i>
+                    </div>
+                    <span class="badge bg-green-900 text-green-400 text-xs">
+                        <i class="fas fa-arrow-up mr-1"></i> 12%
+                    </span>
+                </div>
+                <h3 class="text-gray-400 text-xs sm:text-sm font-medium mb-1">Total Scripts</h3>
+                <p class="text-3xl sm:text-4xl font-bold text-white" id="statScripts">0</p>
+            </div>
+
+            <div class="glass-card stat-card p-4 sm:p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-sky-900 flex items-center justify-center">
+                        <i class="fas fa-copy text-xl sm:text-2xl text-sky-400"></i>
+                    </div>
+                    <span class="badge bg-green-900 text-green-400 text-xs">
+                        <i class="fas fa-arrow-up mr-1"></i> 8.2%
+                    </span>
+                </div>
+                <p class="text-3xl sm:text-4xl font-bold text-white">490,288</p>
+            </div>
+
+            <div class="glass-card stat-card p-4 sm:p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-green-900 flex items-center justify-center">
+                        <i class="fas fa-download text-xl sm:text-2xl text-green-400"></i>
+                    </div>
+                    <span class="badge bg-red-900 text-red-400 text-xs">
+                        <i class="fas fa-arrow-down mr-1"></i> 1%
+                    </span>
+                </div>
+                <h3 class="text-gray-400 text-xs sm:text-sm font-medium mb-1">Downloads</h3>
+                <p class="text-3xl sm:text-4xl font-bold text-white">1604,815</p>
+            </div>
+
+            <div class="glass-card stat-card p-4 sm:p-6">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl bg-yellow-900 flex items-center justify-center">
+                        <i class="fas fa-users text-xl sm:text-2xl text-yellow-400"></i>
+                    </div>
+                    <span class="badge bg-green-900 text-green-400 text-xs">
+                        <i class="fas fa-arrow-up mr-1"></i> 5.1%
+                    </span>
+                </div>
+                <h3 class="text-gray-400 text-xs sm:text-sm font-medium mb-1">Active Users</h3>
+                <p class="text-3xl sm:text-4xl font-bold text-white" id="statAccounts">0</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6" id="scripts">
+            <div class="glass-card p-4 sm:p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                        <i class="fas fa-plus text-lg sm:text-xl text-white"></i>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white">Add New Script</h2>
+                </div>
+
+                <form id="addScriptForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Script Title</label>
+                        <input type="text" id="scriptTitle" required
+                               class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition"
+                               placeholder="Enter script name...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Script Key</label>
+                        <textarea id="scriptKey" required rows="1"
+                                  class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition font-mono text-sm"
+                                  placeholder="Paste your script key here..."></textarea>
+                    </div>
+
+                                        <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Script Image</label>
+                        <input type="file" id="scriptImage" accept="image/*" class="hidden">
+                        <button type="button" onclick="document.getElementById('scriptImage').click()"
+                                class="w-full px-4 py-4 border-2 border-dashed border-gray-700 rounded-xl hover:border-accent transition text-gray-300 font-medium bg-secondary hover:bg-primary">
+                            <i class="fas fa-cloud-upload-alt mr-2 text-accent"></i>
+                            <span id="uploadLabel">Choose Image or Drag Here</span>
+                        </button>
+                        <input type="hidden" id="scriptImageUrl">
+                    </div>
+
+                    <button type="submit" class="w-full btn-gradient text-white font-bold py-4 px-6 rounded-xl">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add Script to Library
+                    </button>
+
+                    <div id="addMessage" class="hidden p-4 rounded-xl font-medium"></div>
+                </form>
+            </div>
+
+            <div class="glass-card p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                            <i class="fas fa-list text-lg sm:text-xl text-white"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-white">Scripts Library</h2>
+                    </div>
+                    <span class="badge bg-accent text-white"><span id="scriptCount"> 0 </span> items</span>
+                </div>
+
+                <div class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-2" id="scriptsList">
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 sm:p-6 mb-4 sm:mb-6" id="accounts">
+            <div class="flex items-center mb-6">
+                <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                    <i class="fas fa-users text-lg sm:text-xl text-white"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-white">Account Management</h2>
+            </div>
+
+            <div class="responsive-table overflow-x-auto rounded-xl">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-gray-700">
+                            <th class="text-left py-4 px-4 text-sm font-bold text-gray-300">User</th>
+                            <th class="text-left py-4 px-4 text-sm font-bold text-gray-300">Username</th>
+                            <th class="text-left py-4 px-4 text-sm font-bold text-gray-300">Password</th>
+                            <th class="text-left py-4 px-4 text-sm font-bold text-gray-300">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTable" class="divide-y divide-gray-700 text-gray-100">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6" id="profiles">
+            <div class="glass-card p-4 sm:p-6">
+                <div class="flex items-center mb-6">
+                    <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                        <i class="fas fa-user-plus text-lg sm:text-xl text-white"></i>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-bold text-white">Add Quick Profile</h2>
+                </div>
+
+                <form id="addProfileForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Profile Name</label>
+                        <input type="text" id="profileName" required
+                               class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition"
+                               placeholder="Enter profile name...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Username</label>
+                        <input type="text" id="profileUsername" required
+                               class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition"
+                               placeholder="Enter username...">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Password</label>
+                        <input type="text" id="profilePassword" required
+                               class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition"
+                               placeholder="Enter password...">
+                    </div>
+
+                                        <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Profile Image</label>
+                        <input type="file" id="profileImageFile" accept="image/*" class="hidden">
+                        <button type="button" onclick="document.getElementById('profileImageFile').click()"
+                                class="w-full px-4 py-4 border-2 border-dashed border-gray-700 rounded-xl hover:border-accent transition text-gray-300 font-medium bg-secondary hover:bg-primary">
+                            <i class="fas fa-cloud-upload-alt mr-2 text-accent"></i>
+                            <span id="profileUploadLabel">Choose Profile Image</span>
+                        </button>
+                        <input type="hidden" id="profileImageUrl">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-300 mb-2">Accent Color</label>
+                        <div class="flex gap-3">
+                            <input type="color" id="profileColor" value="#0ea5e9"
+                                   class="w-20 h-12 border-2 border-gray-700 bg-secondary rounded-xl cursor-pointer">
+                            <input type="text" id="profileColorText" value="#0ea5e9"
+                                   class="flex-1 px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition font-mono"
+                                   placeholder="#0ea5e9">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full btn-gradient text-white font-bold py-4 px-6 rounded-xl">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add Profile
+                    </button>
+
+                    <div id="profileMessage" class="hidden p-4 rounded-xl font-medium"></div>
+                </form>
+            </div>
+
+            <div class="glass-card p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                            <i class="fas fa-id-card text-lg sm:text-xl text-white"></i>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-white">Profile Library</h2>
+                    </div>
+                    <span class="badge bg-accent text-white"><span id="profileCount">0</span> profiles</span>
+                </div>
+
+                <div class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar pr-2" id="profilesList">
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="flex items-center mb-6">
+                <div class="w-10 sm:w-12 h-10 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-dark to-accent flex items-center justify-center mr-3">
+                    <i class="fas fa-lock text-lg sm:text-xl text-white"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-white">Quick Access Profiles Slider</h2>
+            </div>
+
+            <div id="profileSlider" class="max-w-md mx-auto">
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content p-6 sm:p-8">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl sm:text-2xl font-bold text-white">Edit Script</h3>
+                <button id="closeModal" class="w-10 h-10 rounded-xl bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-gray-300 transition">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="editScriptForm" class="space-y-4">
+                <input type="hidden" id="editScriptId">
+                
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Script Title</label>
+                    <input type="text" id="editScriptTitle" required
+                           class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Current Image</label>
+                    <img id="editCurrentImage" class="w-24 h-24 rounded-xl object-cover mb-3 border-2 border-gray-700">
+                    
+                    <input type="file" id="editScriptImageFile" accept="image/*" class="hidden">
+                    <button type="button" onclick="document.getElementById('editScriptImageFile').click()"
+                            class="w-full px-4 py-4 border-2 border-dashed border-gray-700 rounded-xl hover:border-accent transition text-gray-300 font-medium bg-secondary hover:bg-primary">
+                        <i class="fas fa-cloud-upload-alt mr-2 text-accent"></i>
+                        <span id="editUploadLabel">Choose New Image File</span>
+                    </button>
+                    <input type="hidden" id="editScriptImageURL"> 
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-300 mb-2">Script Key</label>
+                    <textarea id="editScriptKey" required rows="6"
+                              class="w-full px-4 py-3 border-2 border-gray-700 bg-secondary text-white rounded-xl transition font-mono text-sm"></textarea>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="submit" class="flex-1 bg-accent hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-xl transition">
+                        <i class="fas fa-save mr-2"></i>Save Changes
+                    </button>
+                    <button type="button" id="cancelEdit" class="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 font-bold py-3 px-6 rounded-xl transition">
+                        Cancel
+                    </button>
+                </div>
+
+                <div id="editMessage" class="hidden p-4 rounded-xl font-medium"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let currentScripts = [];
+        let currentAccounts = [];
+
+        function showMessage(elementId, text, type = 'success') {
+            const el = document.getElementById(elementId);
+            el.classList.remove('hidden', 'bg-red-900', 'text-red-300', 'bg-green-900', 'text-green-300');
+            el.classList.add(type === 'error' ? 'bg-red-900' : 'bg-green-900');
+            el.classList.add(type === 'error' ? 'text-red-300' : 'text-green-300');
+            el.textContent = text;
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 4000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch(`${API_BASE}/api/check-auth`, { credentials: 'include' });
+                const data = await response.json();
+                if (!data.authenticated) {
+                    alert("Access Denied. Please log in.");
+                    window.location.href = `${API_BASE}/`;
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.error("Auth error:", error);
+                return false;
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch(`${API_BASE}/api/logout`, { method: 'POST', credentials: 'include' });
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+            window.location.href = `${API_BASE}/`;
+        }
+
+        async function fetchScripts() {
+            try {
+                const response = await fetch(`${API_BASE}/api/scripts`, { credentials: 'include' });
+                if (!response.ok) throw new Error("Failed to fetch scripts");
+                return await response.json();
+            } catch (error) {
+                console.error("Fetch scripts error:", error);
+                return [];
+            }
+        }
+
+        async function fetchAccounts() {
+            try {
+                const response = await fetch(`${API_BASE}/api/accounts`, { credentials: 'include' });
+                if (!response.ok) throw new Error("Failed to fetch accounts");
+                return await response.json();
+            } catch (error) {
+                console.error("Fetch accounts error:", error);
+                return [];
+            }
+        }
+
+        function renderScripts(scripts) {
+            const container = document.getElementById('scriptsList');
+            document.getElementById('statScripts').textContent = scripts.length;
+            document.getElementById('scriptCount').textContent = scripts.length;
+            document.getElementById('sidebarScripts').textContent = scripts.length;
+
+            if (scripts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-folder-open text-6xl text-gray-700 mb-4"></i>
+                        <p class="text-gray-500 font-medium">No scripts yet. Add your first one!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = scripts.map(script => `
+                <div class="script-card p-4 rounded-xl bg-secondary border border-gray-700">
+                    <div class="flex items-center justify-between flex-wrap sm:flex-nowrap gap-3">
+                        <div class="flex items-center flex-1 min-w-0">
+                            <img src="${escapeHtml(script.image)}" alt="${escapeHtml(script.title)}"
+                                 class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover mr-3 sm:mr-4 flex-shrink-0 border-2 border-gray-700"
+                                 onerror="this.src='https://via.placeholder.com/56'">
+                            <div class="min-w-0 flex-1">
+                                <h4 class="font-bold text-white truncate mb-1 text-sm sm:text-base">${escapeHtml(script.title)}</h4>
+                                <p class="text-xs text-gray-400 truncate font-mono">${escapeHtml(script.key.substring(0, 30))}...</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2 flex-shrink-0">
+                            <button onclick="openEditModal('${script._id}')" 
+                                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-900 text-accent hover:bg-blue-800 flex items-center justify-center transition" 
+                                    title="Edit">
+                                <i class="fas fa-edit text-sm"></i>
+                            </button>
+                            <button onclick="deleteScript('${script._id}')" 
+                                    class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-red-900 text-red-400 hover:bg-red-800 flex items-center justify-center transition" 
+                                    title="Delete">
+                                <i class="fas fa-trash-alt text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAccounts(accounts) {
+            const tbody = document.getElementById('accountsTable');
+            const profilesList = document.getElementById('profilesList');
+            document.getElementById('statAccounts').textContent = accounts.length;
+            document.getElementById('sidebarAccounts').textContent = accounts.length;
+            document.getElementById('profileCount').textContent = accounts.length;
+
+            if (accounts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-12">
+                            <i class="fas fa-users text-6xl text-gray-700 mb-4"></i>
+                            <p class="text-gray-500 font-medium">No accounts available</p>
+                        </td>
+                    </tr>
+                `;
+                profilesList.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-id-card text-6xl text-gray-700 mb-4"></i>
+                        <p class="text-gray-500 font-medium">No profiles yet. Add your first one!</p>
+                    </div>
+                `;
+                renderProfileSlider([]);
+                return;
+            }
+
+            tbody.innerHTML = accounts.map(account => `
+                <tr class="hover:bg-gray-700 transition">
+                    <td class="py-4 px-4">
+                        <div class="flex items-center">
+                            <img src="${escapeHtml(account.image)}" alt="${escapeHtml(account.name)}"
+                                 class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover mr-3 border-2 border-gray-700">
+                            <span class="font-semibold text-white text-sm sm:text-base">${escapeHtml(account.name)}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 font-mono text-xs sm:text-sm text-gray-300">${escapeHtml(account.username)}</td>
+                    <td class="py-4 px-4 font-mono text-xs sm:text-sm text-gray-300">${escapeHtml(account.password)}</td>
+                    <td class="py-4 px-4">
+                        <button class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gray-800 text-gray-500 flex items-center justify-center cursor-not-allowed" disabled>
+                            <i class="fas fa-lock text-xs sm:text-sm"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Render Profile Library Cards
+            profilesList.innerHTML = accounts.map(account => {
+                const accentColor = account.accentColor || '#0ea5e9';
+                return `
+                    <div class="script-card p-4 rounded-xl bg-secondary border-2" style="border-color: ${accentColor};">
+                        <div class="flex items-center justify-between flex-wrap sm:flex-nowrap gap-3">
+                            <div class="flex items-center flex-1 min-w-0">
+                                <img src="${escapeHtml(account.image)}" alt="${escapeHtml(account.name)}"
+                                     class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover mr-3 sm:mr-4 flex-shrink-0 border-3"
+                                     style="border-color: ${accentColor};"
+                                     onerror="this.src='https://via.placeholder.com/64'">
+                                <div class="min-w-0 flex-1">
+                                    <h4 class="font-bold text-white truncate mb-1 text-sm sm:text-base">${escapeHtml(account.name)}</h4>
+                                    <p class="text-xs text-gray-400 truncate font-mono mb-1">
+                                        <i class="fas fa-user mr-1" style="color: ${accentColor};"></i>${escapeHtml(account.username)}
+                                    </p>
+                                    <p class="text-xs text-gray-400 truncate font-mono">
+                                        <i class="fas fa-lock mr-1" style="color: ${accentColor};"></i>${escapeHtml(account.password)}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <button onclick="openEditProfileModal('${account._id}')" 
+                                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-white hover:opacity-80 flex items-center justify-center transition shadow-lg" 
+                                        style="background: ${accentColor};"
+                                        title="Edit Profile">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
+                                <button onclick="deleteProfile('${account._id}')" 
+                                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-red-900 text-red-400 hover:bg-red-800 flex items-center justify-center transition" 
+                                        title="Delete Profile">
+                                    <i class="fas fa-trash-alt text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            renderProfileSlider(accounts);
+        }
+
+        function renderProfileSlider(accounts) {
+            const container = document.getElementById('profileSlider');
+            if (accounts.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">No accounts available</p>';
+                return;
+            }
+
+            let currentIndex = 0;
+
+            function showProfile(index) {
+                const account = accounts[index];
+                const accentColor = account.accentColor || '#0ea5e9'; 
+
+                container.innerHTML = `
+                    <div class="profile-slide">
+                        <div class="bg-secondary rounded-3xl p-6 sm:p-8 shadow-xl border-4" style="border-color: ${accentColor};">
+                            <div class="text-center mb-6">
+                                <img src="${escapeHtml(account.image)}" alt="${escapeHtml(account.name)}"
+                                     class="w-24 h-24 sm:w-28 sm:h-28 rounded-full mx-auto mb-4 border-4 shadow-lg"
+                                     style="border-color: ${accentColor};">
+                                <h3 class="text-2xl sm:text-3xl font-extrabold text-white">${escapeHtml(account.name)}</h3>
+                            </div>
+
+                            <div class="space-y-3 mb-6">
+                                <div class="flex items-center justify-between p-3 sm:p-4 bg-primary-dark rounded-2xl border-2 border-gray-700">
+                                    <div class="flex items-center flex-1 min-w-0 mr-3">
+                                        <i class="fas fa-user text-gray-500 mr-2 sm:mr-3 text-sm"></i>
+                                        <span class="font-bold text-gray-300 truncate text-sm sm:text-base">${escapeHtml(account.username)}</span>
+                                    </div>
+                                    <button onclick="copyToClipboard('${escapeHtml(account.username)}', this)" 
+                                            class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition flex-shrink-0"
+                                            style="background: ${accentColor};">
+                                        <i class="fas fa-copy text-sm"></i>
+                                    </button>
+                                </div>
+                                <div class="flex items-center justify-between p-3 sm:p-4 bg-primary-dark rounded-2xl border-2 border-gray-700">
+                                    <div class="flex items-center flex-1 min-w-0 mr-3">
+                                        <i class="fas fa-lock text-gray-500 mr-2 sm:mr-3 text-sm"></i>
+                                        <span class="font-bold text-gray-300 truncate text-sm sm:text-base">${escapeHtml(account.password)}</span>
+                                    </div>
+                                    <button onclick="copyToClipboard('${escapeHtml(account.password)}', this)" 
+                                            class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg hover:scale-110 transition flex-shrink-0"
+                                            style="background: ${accentColor};">
+                                        <i class="fas fa-copy text-sm"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between">
+                                <button onclick="previousProfile()" 
+                                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white font-bold flex items-center justify-center border-3 border-gray-900 shadow-lg hover:scale-110 transition"
+                                        style="background: ${accentColor}; border-color: ${accentColor}">
+                                    <i class="fas fa-chevron-left text-sm"></i>
+                                </button>
+                                
+                                <div class="flex space-x-2">
+                                    ${accounts.map((_, i) => `
+                                        <div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition ${i === index ? 'bg-accent scale-125' : 'bg-gray-600'}"></div>
+                                    `).join('')}
+                                </div>
+                                
+                                <button onclick="nextProfile()" 
+                                        class="w-10 h-10 sm:w-12 sm:h-12 rounded-full text-white font-bold flex items-center justify-center border-3 border-gray-900 shadow-lg hover:scale-110 transition"
+                                        style="background: ${accentColor}; border-color: ${accentColor}">
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            window.previousProfile = () => {
+                currentIndex = (currentIndex - 1 + accounts.length) % accounts.length;
+                showProfile(currentIndex);
+            };
+
+            window.nextProfile = () => {
+                currentIndex = (currentIndex + 1) % accounts.length;
+                showProfile(currentIndex);
+            };
+
+            showProfile(currentIndex);
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => { button.innerHTML = original; }, 2000);
+            }).catch(err => console.error('Copy failed:', err));
+        }
+        window.copyToClipboard = copyToClipboard;
+
+        async function uploadImage(file) {
+            const label = document.getElementById('uploadLabel');
+            label.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Uploading...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch(`${API_BASE}/api/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                const data = await response.json();
+                label.innerHTML = '<i class="fas fa-check-circle text-accent mr-2"></i>' + data.filename;
+                return data.imageUrl;
+            } catch (error) {
+                label.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i>Upload Failed';
+                throw error;
+            }
+        }
+
+        async function uploadProfileImage(file) {
+            const label = document.getElementById('profileUploadLabel');
+            label.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Uploading...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch(`${API_BASE}/api/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                const data = await response.json();
+                label.innerHTML = '<i class="fas fa-check-circle text-accent mr-2"></i>' + data.filename;
+                return data.imageUrl;
+            } catch (error) {
+                label.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i>Upload Failed';
+                throw error;
+            }
+        }
+        
+        // NEW: uploadEditProfileImage handler for the edit profile modal
+        async function uploadEditProfileImage(file) {
+            const label = document.getElementById('editProfileUploadLabel');
+            label.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Uploading...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch(`${API_BASE}/api/upload-image`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                const data = await response.json();
+                document.getElementById('editProfileImageUrlValue').value = data.imageUrl; // Store new URL
+                document.getElementById('editProfileCurrentImage').src = data.imageUrl; // Update preview
+                label.innerHTML = '<i class="fas fa-check-circle text-accent mr-2"></i>' + data.filename;
+                return data.imageUrl;
+            } catch (error) {
+                label.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i>Upload Failed';
+                throw error;
+            }
+        }
+
+        async function handleAddScript(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('scriptTitle').value;
+            const image = document.getElementById('scriptImageUrl').value;
+            const key = document.getElementById('scriptKey').value;
+
+            if (!image) {
+                showMessage('addMessage', 'Please upload an image first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/scripts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ title, image, key })
+                });
+
+                if (!response.ok) throw new Error("Failed to add script");
+                
+                showMessage('addMessage', 'Script added successfully!', 'success');
+                document.getElementById('addScriptForm').reset();
+                document.getElementById('scriptImageUrl').value = '';
+                document.getElementById('uploadLabel').textContent = 'Choose Image or Drag Here';
+                await initDashboard();
+            } catch (error) {
+                showMessage('addMessage', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleAddProfile(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('profileName').value;
+            const image = document.getElementById('profileImageUrl').value;
+            const username = document.getElementById('profileUsername').value;
+            const password = document.getElementById('profilePassword').value;
+            const accentColor = document.getElementById('profileColor').value;
+
+            if (!image) {
+                showMessage('profileMessage', 'Please upload a profile image first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/accounts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ name, image, username, password, accentColor })
+                });
+
+                if (!response.ok) throw new Error("Failed to add profile");
+                
+                showMessage('profileMessage', 'Profile added successfully!', 'success');
+                document.getElementById('addProfileForm').reset();
+                document.getElementById('profileImageUrl').value = '';
+                document.getElementById('profileUploadLabel').textContent = 'Choose Profile Image';
+                document.getElementById('profileColor').value = '#0ea5e9';
+                document.getElementById('profileColorText').value = '#0ea5e9';
+                await initDashboard();
+            } catch (error) {
+                showMessage('profileMessage', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteScript(scriptId) {
+            if (!confirm('Are you sure you want to delete this script?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    await initDashboard();
+                } else {
+                    alert('Failed to delete script');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+            }
+        }
+        window.deleteScript = deleteScript;
+
+        async function deleteProfile(profileId) {
+            if (!confirm('Are you sure you want to delete this profile?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/accounts/${profileId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                if (response.ok) {
+                    await initDashboard();
+                } else {
+                    alert('Failed to delete profile');
+                }
+            } catch (error) {
+                console.error('Delete profile error:', error);
+            }
+        }
+        window.deleteProfile = deleteProfile;
+
+        function openEditModal(scriptId) {
+            const script = currentScripts.find(s => s._id === scriptId);
+            if (!script) return;
+            
+            document.getElementById('editScriptId').value = script._id;
+            document.getElementById('editScriptTitle').value = script.title;
+            document.getElementById('editScriptImageURL').value = script.image; // Set current image URL
+            document.getElementById('editCurrentImage').src = script.image;
+            document.getElementById('editScriptKey').value = script.key;
+            document.getElementById('editUploadLabel').textContent = 'Choose New Image File'; // Reset file label
+            document.getElementById('editScriptImageFile').value = ''; // Reset file input
+            document.getElementById('editMessage').classList.add('hidden');
+            document.getElementById('editModal').classList.add('active');
+        }
+        window.openEditModal = openEditModal;
+
+        function openEditProfileModal(profileId) {
+            const profile = currentAccounts.find(a => a._id === profileId);
+            if (!profile) return;
+            
+            document.getElementById('editProfileId').value = profile._id;
+            document.getElementById('editProfileName').value = profile.name;
+            // Removed: document.getElementById('editProfileImage').value = profile.image; 
+            document.getElementById('editProfileImageUrlValue').value = profile.image; // Set current image URL
+            document.getElementById('editProfileCurrentImage').src = profile.image;
+            document.getElementById('editProfileUsername').value = profile.username;
+            document.getElementById('editProfilePassword').value = profile.password;
+            document.getElementById('editProfileColor').value = profile.accentColor || '#0ea5e9';
+            document.getElementById('editProfileColorText').value = profile.accentColor || '#0ea5e9';
+            document.getElementById('editProfileUploadLabel').textContent = 'Choose New Image File'; // Reset file label
+            document.getElementById('editProfileImageFile').value = ''; // Reset file input
+            document.getElementById('editProfileMessage').classList.add('hidden');
+            document.getElementById('editProfileModal').classList.add('active');
+        }
+        window.openEditProfileModal = openEditProfileModal;
+
+        async function handleEditScript(e) {
+            e.preventDefault();
+            
+            const scriptId = document.getElementById('editScriptId').value;
+            const title = document.getElementById('editScriptTitle').value;
+            const image = document.getElementById('editScriptImageURL').value; // Get URL from hidden field
+            const key = document.getElementById('editScriptKey').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/scripts/${scriptId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ title, image, key })
+                });
+
+                if (!response.ok) throw new Error("Failed to update script");
+                
+                showMessage('editMessage', 'Script updated successfully!', 'success');
+                setTimeout(() => {
+                    document.getElementById('editModal').classList.remove('active');
+                    initDashboard();
+                }, 1500);
+            } catch (error) {
+                showMessage('editMessage', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function handleEditProfile(e) {
+            e.preventDefault();
+            
+            const profileId = document.getElementById('editProfileId').value;
+            const name = document.getElementById('editProfileName').value;
+            // UPDATED: Get URL from the hidden file input field
+            const image = document.getElementById('editProfileImageUrlValue').value; 
+            const username = document.getElementById('editProfileUsername').value;
+            const password = document.getElementById('editProfilePassword').value;
+            const accentColor = document.getElementById('editProfileColor').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/accounts/${profileId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ name, image, username, password, accentColor })
+                });
+
+                if (!response.ok) throw new Error("Failed to update profile");
+                
+                showMessage('editProfileMessage', 'Profile updated successfully!', 'success');
+                setTimeout(() => {
+                    document.getElementById('editProfileModal').classList.remove('active');
+                    initDashboard();
+                }, 1500);
+            } catch (error) {
+                showMessage('editProfileMessage', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function initDashboard() {
+            try {
+                const scripts = await fetchScripts();
+                currentScripts = scripts;
+                renderScripts(scripts);
+                
+                const accounts = await fetchAccounts();
+                currentAccounts = accounts;
+                renderAccounts(accounts);
+            } catch (error) {
+                console.error('Init error:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const isAuthenticated = await checkAuth();
+            if (!isAuthenticated) return;
+            
+            await initDashboard();
+
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            });
+
+            document.getElementById('closeSidebar').addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+
+            document.getElementById('addScriptForm').addEventListener('submit', handleAddScript);
+            document.getElementById('editScriptForm').addEventListener('submit', handleEditScript);
+            document.getElementById('addProfileForm').addEventListener('submit', handleAddProfile);
+            document.getElementById('editProfileForm').addEventListener('submit', handleEditProfile);
+            
+            // Color picker sync
+            document.getElementById('profileColor').addEventListener('input', (e) => {
+                document.getElementById('profileColorText').value = e.target.value;
+            });
+            
+            document.getElementById('profileColorText').addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (/^#[0-9A-F]{6}$/i.test(color)) {
+                    document.getElementById('profileColor').value = color;
+                }
+            });
+
+            // Edit profile color picker sync
+            document.getElementById('editProfileColor').addEventListener('input', (e) => {
+                document.getElementById('editProfileColorText').value = e.target.value;
+            });
+            
+            document.getElementById('editProfileColorText').addEventListener('input', (e) => {
+                const color = e.target.value;
+                if (/^#[0-9A-F]{6}$/i.test(color)) {
+                    document.getElementById('editProfileColor').value = color;
+                }
+            });
+            
+            document.getElementById('scriptImage').addEventListener('change', async (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        showMessage('addMessage', 'Image must be less than 5MB', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showMessage('addMessage', 'Please upload a valid image', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    try {
+                        const imageUrl = await uploadImage(file);
+                        document.getElementById('scriptImageUrl').value = imageUrl;
+                    } catch (error) {
+                        showMessage('addMessage', 'Failed to upload image', 'error');
+                    }
+                }
+            });
+
+            document.getElementById('editScriptImageFile').addEventListener('change', async (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const label = document.getElementById('editUploadLabel');
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        showMessage('editMessage', 'Image must be less than 5MB', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showMessage('editMessage', 'Please upload a valid image', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+
+                    try {
+                        label.innerHTML = '<i class="fas fa-spinner animate-spin mr-2"></i>Uploading...';
+                        const formData = new FormData();
+                        formData.append('image', file);
+                        
+                        const response = await fetch(`${API_BASE}/api/upload-image`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            body: formData
+                        });
+                        
+                        if (!response.ok) throw new Error('Upload failed');
+                        
+                        const data = await response.json();
+                        document.getElementById('editScriptImageURL').value = data.imageUrl; // SET NEW IMAGE URL
+                        document.getElementById('editCurrentImage').src = data.imageUrl; // UPDATE PREVIEW
+                        label.innerHTML = '<i class="fas fa-check-circle text-accent mr-2"></i>' + data.filename;
+                    } catch (error) {
+                        showMessage('editMessage', 'Failed to upload image', 'error');
+                        label.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-2"></i>Upload Failed';
+                    }
+                }
+            });
+
+            document.getElementById('profileImageFile').addEventListener('change', async (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        showMessage('profileMessage', 'Image must be less than 5MB', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showMessage('profileMessage', 'Please upload a valid image', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    try {
+                        const imageUrl = await uploadProfileImage(file);
+                        document.getElementById('profileImageUrl').value = imageUrl;
+                    } catch (error) {
+                        showMessage('profileMessage', 'Failed to upload image', 'error');
+                    }
+                }
+            });
+            
+            // NEW: Edit Profile Image Upload Handler
+            document.getElementById('editProfileImageFile').addEventListener('change', async (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        showMessage('editProfileMessage', 'Image must be less than 5MB', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    if (!file.type.startsWith('image/')) {
+                        showMessage('editProfileMessage', 'Please upload a valid image', 'error');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    try {
+                        await uploadEditProfileImage(file);
+                    } catch (error) {
+                        showMessage('editProfileMessage', 'Failed to upload image', 'error');
+                    }
+                }
+            });
+
+            document.getElementById('closeModal').addEventListener('click', () => {
+                document.getElementById('editModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelEdit').addEventListener('click', () => {
+                document.getElementById('editModal').classList.remove('active');
+            });
+
+            document.getElementById('editModal').addEventListener('click', (e) => {
+                if (e.target.id === 'editModal') {
+                    document.getElementById('editModal').classList.remove('active');
+                }
+            });
+
+            // Profile Modal Controls
+            document.getElementById('closeProfileModal').addEventListener('click', () => {
+                document.getElementById('editProfileModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelProfileEdit').addEventListener('click', () => {
+                document.getElementById('editProfileModal').classList.remove('active');
+            });
+
+            document.getElementById('editProfileModal').addEventListener('click', (e) => {
+                if (e.target.id === 'editProfileModal') {
+                    document.getElementById('editProfileModal').classList.remove('active');
+                }
+            });
+
+            document.getElementById('logoutBtn').addEventListener('click', (e) => {
+                e.preventDefault();
+                logout();
+            });
+
+            document.querySelectorAll('.nav-link').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        
+                        if (window.innerWidth < 1024) {
+                            sidebar.classList.remove('active');
+                            overlay.classList.remove('active');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
